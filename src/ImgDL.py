@@ -1,6 +1,5 @@
 import urllib
 import requests
-import os
 import re
 import sys
 import time
@@ -8,25 +7,34 @@ import threading
 from datetime import datetime
 from multiprocessing.dummy import Pool
 from multiprocessing import Queue
-from Image import Image
+from .Image import Image
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 class ImgsDownloader(ABC):
     
     def __init__(self, word, dirpath = None, processNum = 16):
         if " " in word:
             pass
+        self._identify = "Baseclass"
         self._word = word
+        root_path = Path.cwd()
+        result_path = root_path / "results"        
         if not dirpath:
-            # dirpath = os.path.join(os.path.dirname(os.getcwd()), 'results')
-            dirpath = os.path.join(os.getcwd(), 'results')
+            dirpath = result_path / self._word
         self._dirpath = dirpath 
-        self._logDir = os.path.join(os.getcwd(), 'logs')
-        self._srcUrlFile = os.path.join(self._logDir, 'srcUrl')
-        self._logFile = os.path.join(self._logDir,"logInfo")
-        self._errorFile = os.path.join(self._logDir,"errorUrl")
-        if os.path.exists(self._errorFile):
-            os.remove(self._errorFile)       
+        if not Path.exists(result_path):
+            Path.mkdir(result_path)
+        if not Path.exists(self._dirpath):
+            Path.mkdir(self._dirpath)
+        self._logDir = root_path / "logs"
+        if not Path.exists(self._logDir):
+            Path.mkdir(self._logDir)
+        self._srcUrlFile =self._logDir / "srcUrl"
+        self._logFile = self._logDir / "logInfo"
+        self._errorFile = self._logDir / "errorUrl"
+        if Path.exists(self._errorFile):
+            Path.unlink(self._errorFile)       
         self._session = requests.Session()
         self._session.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.71 Safari/537.36",
@@ -50,7 +58,7 @@ class ImgsDownloader(ABC):
         start_time = datetime.now()
         urls = self._buildUrls()
         self._messageQueue.put(self._prefix + "Total %s source urls"%(len(urls)))
-        self._pool.map(self._resolveUrl, urls[0:5])
+        self._pool.map(self._resolveUrl, urls[0:1])
         while self._queue.qsize():
             imgs = self._queue.get()
             self._pool.map_async(self._downImg, imgs)
@@ -130,7 +138,7 @@ class ImgsDownloader(ABC):
                 index = self._getIndex()
                 info = "Downloading: %s th images. Url: %s."%(index + 1, imgUrl)
                 self._messageQueue.put(info)
-                filename = os.path.join(self._dirpath, self._word + str(index) + '.' + img.type)
+                filename = self._dirpath / (self._identify + "_" + self._word + "_" + str(index) + "." + img.type)
                 with open(filename, "wb") as f:
                     f.write(img_res.content)
     
