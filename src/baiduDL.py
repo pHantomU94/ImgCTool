@@ -1,4 +1,7 @@
-from ImgDL import ImgsDownloader, re, time, urllib, Image
+from .ImgDL import ImgsDownloader
+import re
+import time
+import urllib
 
 class BaiduImgsDownloader(ImgsDownloader):
 
@@ -9,44 +12,11 @@ class BaiduImgsDownloader(ImgsDownloader):
         'AzdH3F': '/'
     }
 
-    char_table = {
-        'w': 'a',
-        'k': 'b',
-        'v': 'c',
-        '1': 'd',
-        'j': 'e',
-        'u': 'f',
-        '2': 'g',
-        'i': 'h',
-        't': 'i',
-        '3': 'j',
-        'h': 'k',
-        's': 'l',
-        '4': 'm',
-        'g': 'n',
-        '5': 'o',
-        'r': 'p',
-        'q': 'q',
-        '6': 'r',
-        'f': 's',
-        'p': 't',
-        '7': 'u',
-        'e': 'v',
-        'o': 'w',
-        '8': '1',
-        'd': '2',
-        'n': '3',
-        '9': '4',
-        'c': '5',
-        'm': '6',
-        '0': '7',
-        'b': '8',
-        'l': '9',
-        'a': '0'
-    }
+    trans_table = str.maketrans("wkv1ju2it3hs4g5rq6fp7eo8dn9cm0bla","abcdefghijklmnopqrstuvw1234567890")
 
     def __init__(self, word, dirpath = None, processNum = 16):
         super(BaiduImgsDownloader,self).__init__(word)
+        self._identify = "BD"
         self._re_url = re.compile(r'"objURL":"(.*?)"')
 
     def _decode(self, url):
@@ -60,7 +30,8 @@ class BaiduImgsDownloader(ImgsDownloader):
         for key, value in self.str_table.items():
             url = url.replace(key, value)
         # 再替换剩下的字符
-        return url.translate(self.char_table)
+        return url.translate(self.trans_table
+        )
     
     def _buildUrls(self):
         word = urllib.parse.quote(self._word)
@@ -78,8 +49,9 @@ class BaiduImgsDownloader(ImgsDownloader):
         return urls
             
 
-if __name__ == "__main__":
-    word_list = ["无人机"]
-    for word in word_list:
-        down = BaiduImgsDownloader(word)
-        down.start()
+# if __name__ == "__main__":
+#     word_list = ["无人机"]
+#     for word in word_list:
+#         down = BaiduImgsDownloader(word)
+#         down.start()
+
