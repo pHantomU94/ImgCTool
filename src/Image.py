@@ -1,5 +1,3 @@
-
-
 class Image(object):
     """
     Class Image
