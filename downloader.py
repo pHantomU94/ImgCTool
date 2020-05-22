@@ -1,7 +1,5 @@
-from src import BD
+from src import BD, SG, SO, Bing, VCG
 
-
-word_list = ["无人机"]
-for word in word_list:
-    down = BD(word)
-    down.start()
+word = "测试"
+down = VCG(word)
+down.start()
