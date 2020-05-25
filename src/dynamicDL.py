@@ -15,21 +15,30 @@ class DynamicImgsDownloader(ABC):
     
     def __init__(self, word, dirpath = None, processNum = 16):
         if " " in word:
-            pass
-        self._identify = "Baseclass"
-        self._encode = "utf-8"
-        self._word = word
-        root_path = Path.cwd()
-        result_path = root_path / "results"        
+            raise("Multi keyword joint search is not supported temporarily.")
+        """
+        These member variables need to be reset in the subclass.
+        """
+        self._identify = "Baseclass"    # The search engine identify
+        self._encode = "utf-8"          # The encode method of engine
+        self._re_url = re.compile("")   # Regular matching rules of image source URL
+        """
+        end
+        """
+        self._word = word   # Image keyword
+        root_path = Path.cwd()  # Project root path
+        result_path = root_path / "download"    # The download result folder
+        # Make default download path when folder is not specified
         if not dirpath:
             dirpath = result_path / self._word
         self._dirpath = dirpath 
+        # Make related folder
         if not Path.exists(result_path):
             Path.mkdir(result_path)
         if not Path.exists(self._dirpath):
             Path.mkdir(self._dirpath)
-        self._logDir = root_path / "logs"
-        if not Path.exists(self._logDir):
+        self._logDir = root_path / "logs"   # log files folder path
+        if not Path.exists(self._logDir):   # 
             Path.mkdir(self._logDir)
         self._srcUrlFile =self._logDir / "srcUrl"
         self._logFile = self._logDir / "logInfo"
@@ -41,7 +50,6 @@ class DynamicImgsDownloader(ABC):
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.71 Safari/537.36",
             "Accept-Encoding": "gzip, deflate, sdch",
             }
-        self._re_url = re.compile("")   
         self._delay = 1.5   # Add a delay to prevent being banned due to frequent requests
         self._index = 0     # image file index for save 
         self._pool = Pool(processNum)
@@ -52,19 +60,25 @@ class DynamicImgsDownloader(ABC):
         self._QUIT = "QUIT"
 
     def start(self):
+        # start the log monitor
         t = threading.Thread(target=self._log)
         t.setDaemon(True)
         t.start()
-        self._messageQueue.put(self._prefix + "New job start")
+        # create job
+        self._messageQueue.put(self._prefix + "New job start. Keyword: %s, Search engine: %s"%(self._word, self._identify))
         start_time = datetime.now()
+        # step 1: create all the jsonurl according to the specified engine
         urls = self._buildUrls()
         self._messageQueue.put(self._prefix + "Total %s source urls"%(len(urls)))
+        # step 2: resolve all the jsonurls to accquire the images url 
         self._pool.map(self._resolveUrl, urls)
+        # step 3: download the image according to image url
         while self._queue.qsize():
             imgs = self._queue.get()
             self._pool.map_async(self._downImg, imgs)
         self._pool.close()
         self._pool.join()
+        # end 
         self._messageQueue.put(self._prefix + "Job completed. Total %s images. Duration: %s"%(self._index, datetime.now() - start_time))
         self._messageQueue.put(self._prefix + "The images are saved in %s."%self._dirpath)
         self._messageQueue.put(self._prefix + "Logs are saved in %s"%self._logFile)
@@ -78,11 +92,14 @@ class DynamicImgsDownloader(ABC):
         with open(self._logFile, "w+", encoding="utf-8") as f:
             while True:
                 msg = self._messageQueue.get()
+                # end
                 if msg == self._QUIT:
                     break
                 msg = str(datetime.now()) + " " + msg
+                # resolve info and others 
                 if self._prefix in msg:
                     print(msg)
+                # downlog info
                 elif "Downloading" in msg:
                     pass
                 f.write(msg + '\n')
@@ -98,6 +115,9 @@ class DynamicImgsDownloader(ABC):
     
     def _decode(self, url):
         """
+        This method work for decode image url if necessary.
+        This method is not set to abstract because some engines do not need to decode. 
+        You can override this function in a subclass if you need to decode the image url.
         """
         return url
 
@@ -107,11 +127,17 @@ class DynamicImgsDownloader(ABC):
         Input:
             url. The specified link
         """
+        # sleep
         time.sleep(self._delay)
+        # get html page from jsonurl
         html = self._session.get(url, timeout = 15).content.decode(self._encode)
+        # resolve image URL according to regular rules
         datas = self._re_url.findall(html)
+        # make image objects containing url and type
         imgs = [Image(self._decode(x), self._decode(x).split(".")[-1]) for x in datas]
+        # generate log info
         info = self._prefix + "%s image urls has been resolved."%len(imgs)
+        # save in Queue 
         self._messageQueue.put(info)
         self._queue.put(imgs)
 
@@ -124,7 +150,9 @@ class DynamicImgsDownloader(ABC):
         imgUrl = img.url
         msg = None
         try:
+            # sleep
             time.sleep(self._delay)
+            # get image
             img_res = self._session.get(imgUrl,timeout = 15)
             if str(img_res.status_code)[0] == "4":
                 msg = "\nDownload failed.%s : %s"%(imgUrl, img_res.status_code)
@@ -133,11 +161,15 @@ class DynamicImgsDownloader(ABC):
         except Exception as e:
             msg = "\nException: %s.%s"%(str(e),imgUrl)
         finally:
+            # download failed
             if msg:
                 self._messageQueue.put(msg)
                 self._saveError(msg)
+            # download success
             else:
+                # get image index
                 index = self._getIndex()
+                # downloading and save
                 info = "Downloading: %s th images. Url: %s."%(index + 1, imgUrl)
                 self._messageQueue.put(info)
                 filename = self._dirpath / (self._identify + "_" + self._word + "_" + str(index) + "." + img.type)
