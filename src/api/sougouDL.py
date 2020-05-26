@@ -7,7 +7,7 @@ class SougouImgsDownloader(DynamicImgsDownloader):
 
     def __init__(self, word, dirpath = None, processNum = 16):
         super(SougouImgsDownloader,self).__init__(word,dirpath=dirpath,processNum=processNum)
-        self._identify = "SG"
+        self._identify = "Sougou"
         self._encode = "GBK"
         self._re_url = re.compile(r'"ori_pic_url":"(.*?)"')
     

@@ -16,7 +16,7 @@ class BaiduImgsDownloader(DynamicImgsDownloader):
 
     def __init__(self, word, dirpath = None, processNum = 16):
         super(BaiduImgsDownloader,self).__init__(word)
-        self._identify = "BD"
+        self._identify = "Baidu"
         self._encode = "utf-8"
         self._re_url = re.compile(r'"objURL":"(.*?)"')
 

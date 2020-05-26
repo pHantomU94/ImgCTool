@@ -7,7 +7,7 @@ class SoImgsDownloader(DynamicImgsDownloader):
 
     def __init__(self, word, dirpath = None, processNum = 16):
         super(SoImgsDownloader,self).__init__(word,dirpath=dirpath,processNum=processNum)
-        self._identify = "SO"
+        self._identify = "SO360"
         self._encode = "utf-8"
         self._re_url = re.compile(r'"img":"(.*?)"')
     

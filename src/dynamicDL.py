@@ -13,7 +13,7 @@ from pathlib import Path
 
 class DynamicImgsDownloader(ABC):
     
-    def __init__(self, word, dirpath = None, processNum = 16):
+    def __init__(self, word, processNum = 16, dirpath = None):
         if " " in word:
             raise("Multi keyword joint search is not supported temporarily.")
         """
@@ -71,7 +71,7 @@ class DynamicImgsDownloader(ABC):
         urls = self._buildUrls()
         self._messageQueue.put(self._prefix + "Total %s source urls"%(len(urls)))
         # step 2: resolve all the jsonurls to accquire the images url 
-        self._pool.map(self._resolveUrl, urls)
+        self._pool.map(self._resolveUrl, urls[0:1])
         # step 3: download the image according to image url
         while self._queue.qsize():
             imgs = self._queue.get()
