@@ -1,9 +1,9 @@
 # ImgCTool 
 This is an image download tool for research only, which is used to obtain the image set needed for training.
-ImgCTool implements a dynamic crawler. It can download images according to keywords from some search engines that dynamically load images through Ajex. 
+ImgCTool implements a dynamic crawler. It can download images according to keywords from some search engines that dynamically load images through Ajax. 
 
 这是一个用于科研的图片爬取工具，可以帮助你获取所需的图片数据集。
-目前实现了一个动态爬虫，可以从通过Ajex动态加载图片的搜索引擎与图片站中根据关键词下载图片。
+目前实现了一个动态爬虫，可以从通过Ajax动态加载图片的搜索引擎与图片站中根据关键词下载图片。
 # Usage
 
 # Extension
